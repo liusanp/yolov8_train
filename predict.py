@@ -54,6 +54,8 @@ def predict():
 
     # 显示图片
     plt.show()
+    # 保存图片
+    # plt.savefig('result.jpg', dpi=100)
     print(res)
     
     
