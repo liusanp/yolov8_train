@@ -5,6 +5,7 @@ import os
 import shutil
 from pathlib import Path
 from sklearn.model_selection import train_test_split
+from datetime import datetime
 
 
 # 处理label studio导出的分类打标图片
@@ -138,7 +139,7 @@ def spilit_detect_data_by_cate(data_folder):
     os.makedirs(val_folder, exist_ok=True)
     os.makedirs(test_folder, exist_ok=True)
     # Get the list of image files
-    image_files = [f for f in os.listdir(images_folder) if f.endswith(('.jpg', '.jpeg', '.png', '.JPG'))]
+    image_files = [f for f in os.listdir(images_folder) if f.endswith(('.jpg', '.jpeg', '.png', '.JPG', '.PNG'))]
     val_count = int(len(image_files) * val_ratio)
     test_count = int(len(image_files) * test_ratio)
     train_count = len(image_files) - val_count - test_count
@@ -220,6 +221,103 @@ def spilit_detect_data_by_cate(data_folder):
             move_files(images_folder, os.path.join(test_folder, "images"), [img])
             move_files(labels_folder, os.path.join(test_folder, "labels"), [os.path.splitext(img)[0] + ".txt"])
     print(f'total: {len(image_files)}, train_images: {len(train_images)}, val_images: {len(val_images)}, test_images: {len(test_images)}')
+    
+    
+def spilit_detect_data_by_tagsCate(data_folder, tags_cate):
+    # 获取所有标签（所有标签在同一个lablestudio项目中标注）
+    labels = []
+    label_file = os.path.join(data_folder, "classes.txt")
+    all_images_folder = os.path.join(data_folder, "images")
+    all_labels_folder = os.path.join(data_folder, "labels")
+    with open(label_file, 'r', encoding='utf8') as f:
+        for line in f.readlines():
+            line = line.strip()
+            if line:
+                labels.append(line)
+    time_str = datetime.now().strftime("%Y%m%d")
+    for k, v in tqdm(tags_cate.items()):
+        # pdf_layout_table-20240926
+        k_folder = os.path.join(data_folder, f"pdf_layout_{k}-{time_str}")
+        os.makedirs(k_folder, exist_ok=True)
+        # 写入classes.txt
+        label_file = os.path.join(k_folder, "classes.txt")
+        label_idx_link = {}
+        with open(label_file, 'w', encoding='utf8') as f:
+            new_idx = 0
+            for i in v:
+                f.write(labels[i] + "\n")
+                label_idx_link[str(i)] = str(new_idx)
+                new_idx += 1
+        # 新建images和labels文件夹
+        images_folder = os.path.join(k_folder, "images")
+        labels_folder = os.path.join(k_folder, "labels")
+        os.makedirs(images_folder, exist_ok=True)
+        os.makedirs(labels_folder, exist_ok=True)
+        # 将有v中标签的图片和标注结果复制过来
+        image_files = [f for f in os.listdir(all_images_folder) if f.endswith(('.jpg', '.jpeg', '.png', '.JPG', '.PNG'))]
+        for img in image_files:
+            txt_path = os.path.splitext(img)[0] + ".txt"
+            is_need_move = False
+            new_label_res = []
+            with open(os.path.join(all_labels_folder, txt_path), 'r') as f:
+                for line in f.readlines():
+                    label = line.strip().split(' ')[0]
+                    if int(label) in v:
+                        is_need_move = True
+                        new_label_res.append(label_idx_link[label] + line.strip()[len(label):])
+            if is_need_move:
+                move_files(all_images_folder, images_folder, [img])
+                with open(os.path.join(labels_folder, txt_path), 'w', encoding='utf8') as f:
+                    for i in new_label_res:
+                        f.write(i + "\n")
+        spilit_detect_data_by_cate(k_folder)
+        
+        
+def del_data_label(data_folder, del_cates):
+    # 删除标注数据中的标签
+    labels = []
+    del_cates_idx = []
+    label_file = os.path.join(data_folder, "classes.txt")
+    all_images_folder = os.path.join(data_folder, "images")
+    all_labels_folder = os.path.join(data_folder, "labels")
+    with open(label_file, 'r', encoding='utf8') as f:
+        cate_idx = 0
+        for line in f.readlines():
+            line = line.strip()
+            if line and line not in del_cates:
+                labels.append(line)
+            else:
+                del_cates_idx.append(cate_idx)
+            cate_idx += 1
+    print(labels)
+    print(del_cates_idx)
+    with open(label_file, 'w', encoding='utf8') as f:
+        for line in labels:
+            f.write(line + "\n")
+    #  删除标签
+    labels_files = [f for f in os.listdir(all_labels_folder) if f.endswith(('.txt'))]
+    del_imgs = []
+    for lab in tqdm(labels_files):
+        labels_res = []
+        with open(os.path.join(all_labels_folder, lab), 'r', encoding='utf8') as f:
+            for line in f.readlines():
+                label_split = line.strip().split(' ')
+                label = int(label_split[0])
+                if label not in del_cates_idx:
+                    for d in del_cates_idx:
+                        if label > d:
+                            label -= 1
+                    labels_res.append(f'{label} {" ".join(label_split[1:])}\n')
+        if labels_res:
+            with open(os.path.join(all_labels_folder, lab), 'w', encoding='utf8') as f:
+                for line in labels_res:
+                    f.write(line)
+        else:
+            os.remove(os.path.join(all_labels_folder, lab))
+            del_imgs.append(os.path.splitext(lab)[0])
+    for f in os.listdir(all_images_folder):
+        if os.path.splitext(f)[0] in del_imgs:
+            os.remove(os.path.join(all_images_folder, f))
 
 
 if __name__ == '__main__':
@@ -227,4 +325,21 @@ if __name__ == '__main__':
     # do_handle()
     # 目标检测训练集处理
     # spilit_detect_data()
-    spilit_detect_data_by_cate(r'D:\Document\captcha_detection\pdf_layout\train_data\pdf_layout-20240913')
+    # 切分训练集
+    spilit_detect_data_by_cate(r'D:\Document\captcha_detection\special_symbol\train_data\special_symbol-20241202')
+    # 切分训练集，按标签类别区分
+    # spilit_detect_data_by_tagsCate(
+    #     r'D:\Document\captcha_detection\pdf_layout\train_data\pdf_layout-20241106', 
+    #     {
+    #         "table": [9],
+    #         "formula": [5],
+    #         "anno": [0, 1],
+    #         "bold": [2],
+    #         "italic": [6],
+    #         "subScript": [7],
+    #         "superScript": [8],
+    #         "textattr": [3, 4, 10],
+    #     }
+    # )
+    # 去除训练集标签  ccc6  hui20
+    # del_data_label(r'D:\Document\captcha_detection\special_symbol\train_data\special_symbol-20241202', ['ccc', 'hui', 'dcf', 'dcz', 'dc', 'wdcf', 'wdcz', 'wdcwzf'])

@@ -4,7 +4,7 @@ import json
 
 # 读取文件夹下的所有txt文档，计算文档每行第一个空格前的数字数量
 def count_first_number(file_path):
-    data_folder = r'D:\Document\captcha_detection\clothes_tags\train_data\clothes_tags-20240911'
+    data_folder = r'D:\Document\captcha_detection\pdf_layout\project-69-at-2024-09-26-09-23-d91519f4'
     train_folder = os.path.join(data_folder, "labels")
     # val_folder = os.path.join(data_folder, "val/labels")
     train_files = [f for f in os.listdir(train_folder) if f.endswith('.txt')]
@@ -38,7 +38,7 @@ def count_first_number(file_path):
     
     
 def count_tag_pic():
-    data_folder = r'D:\Document\captcha_detection\clothes_tags\train_data\clothes_tags-20240911'
+    data_folder = r'D:\Document\captcha_detection\pdf_layout\project-69-at-2024-09-24-08-58-fcbdb065'
     train_folder = os.path.join(data_folder, "labels")
     # val_folder = os.path.join(data_folder, "val/labels")
     train_files = [f for f in os.listdir(train_folder) if f.endswith('.txt')]
@@ -68,5 +68,5 @@ def count_tag_pic():
     
     
 if __name__ == '__main__':
-    # count_first_number(None)
-    count_tag_pic()
+    count_first_number(None)
+    # count_tag_pic()

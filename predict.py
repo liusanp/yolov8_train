@@ -12,8 +12,8 @@ def predict_all():
     
 def predict():
     # 加载模型
-    model = YOLO(r'D:\Document\captcha_detection\pdf_layout\runs\train\train-pdf_layout-20240913\weights\best.pt')  # 加载自定义模型
-    img_path = r'C:\Users\ccruser\Desktop\微信图片_20240913170110.jpg'
+    model = YOLO(r'D:\Document\captcha_detection\special_symbol\runs\train\20241121\train-special_symbol-20241121\weights\best.pt')  # 加载自定义模型
+    img_path = r'D:\Document\captcha_detection\special_symbol\train_data\special_symbol-20241121\test\images\e4338bf5-241114-ZHY_15_NN_NN_04_03_03.jpg'
     # 验证模型
     results = model.predict(source=img_path)
     # print(results[0].names)
