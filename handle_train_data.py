@@ -303,11 +303,12 @@ def del_data_label(data_folder, del_cates):
             for line in f.readlines():
                 label_split = line.strip().split(' ')
                 label = int(label_split[0])
+                new_label = label
                 if label not in del_cates_idx:
                     for d in del_cates_idx:
                         if label > d:
-                            label -= 1
-                    labels_res.append(f'{label} {" ".join(label_split[1:])}\n')
+                            new_label -= 1
+                    labels_res.append(f'{new_label} {" ".join(label_split[1:])}\n')
         if labels_res:
             with open(os.path.join(all_labels_folder, lab), 'w', encoding='utf8') as f:
                 for line in labels_res:
